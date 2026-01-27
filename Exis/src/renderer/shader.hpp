@@ -35,6 +35,7 @@ CORE_API void setUniform(const Shader* shader, const char* name , const int valu
 CORE_API void setUniform(const Shader* shader, const char* name , const uint32_t value);
 CORE_API void setUniform(const Shader* shader, const char* name , const glm::mat4 value);
 CORE_API void setUniform(const Shader* shader, const char* name , const glm::vec3 value);
+CORE_API void setUniform(const Shader* shader, const char* name , const glm::vec2 value);
 void setUniform(const Shader* shader, const char* name , const int* value, int size);
 
 void useShader(const Shader* shader);  // Internal: Use beginShaderMode() instead
