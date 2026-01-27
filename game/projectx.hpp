@@ -20,6 +20,13 @@
 struct GameState{
     Arena* arena;
     OrtographicCamera mainCamera;
+    float* u;
+    float* uPrev;
+    float* v;
+    float* vPrev;
+    float* dens;
+    float* densPrev;
+    float* source;
     bool restart;
 
     bool pause = false;
