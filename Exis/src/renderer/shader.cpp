@@ -213,3 +213,9 @@ void setUniform(const Shader* shader, const char* name , const glm::vec3 value){
     int uniformId = glGetUniformLocation(shader->id, name);
     glUniform3fv(uniformId, 1, glm::value_ptr(value));
 }
+
+void setUniform(const Shader* shader, const char* name , const glm::vec2 value){
+    useShader(shader);
+    int uniformId = glGetUniformLocation(shader->id, name);
+    glUniform3fv(uniformId, 1, glm::value_ptr(value));
+}

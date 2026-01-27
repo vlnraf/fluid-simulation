@@ -4,10 +4,10 @@
 
 // Forward declare game functions that will be statically linked
 extern "C" {
-    void gameStart(Arena* gameArena, EngineState* engine);
-    void gameRender(Arena* gameArena, EngineState* engine, float dt);
-    void gameUpdate(Arena* gameArena, EngineState* engine, float dt);
-    void gameStop(Arena* gameArena, EngineState* engine);
+    void gameStart(Arena* gameArena);
+    void gameRender(Arena* gameArena, float dt);
+    void gameUpdate(Arena* gameArena, float dt);
+    void gameStop(Arena* gameArena);
 }
 
 // Assign function pointers to statically linked game functions

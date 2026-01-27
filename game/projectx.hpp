@@ -26,9 +26,9 @@ struct GameState{
 };
 
 extern "C" {
-    GAME_API void gameStart(Arena* gameArena, EngineState* engine);
-    GAME_API void gameRender(Arena* gameArena, EngineState* engine, float dt);
-    GAME_API void gameUpdate(Arena* gameArena, EngineState* engine, float dt);
+    GAME_API void gameStart(Arena* gameArena);
+    GAME_API void gameRender(Arena* gameArena, float dt);
+    GAME_API void gameUpdate(Arena* gameArena, float dt);
     //GAME_API GameState* gameReload(GameState* gameState, Renderer* renderer, const char* filePath);
-    GAME_API void gameStop(Arena* gameArena, EngineState* engine);
+    GAME_API void gameStop(Arena* gameArena);
 }

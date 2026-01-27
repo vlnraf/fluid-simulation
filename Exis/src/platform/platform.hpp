@@ -7,11 +7,11 @@ struct ApplicationState;
 struct EngineState;
 struct Arena;
 
-typedef void GameStart(Arena* gameArena, EngineState* engine);
-typedef void GameRender(Arena* gameArena, EngineState* engine, float dt);
-typedef void GameUpdate(Arena* gameArena, EngineState* engine, float dt);
+typedef void GameStart(Arena* gameArena);
+typedef void GameRender(Arena* gameArena, float dt);
+typedef void GameUpdate(Arena* gameArena, float dt);
 //typedef void* GameReload(void* gameState, Renderer* renderer, const char* filePath);
-typedef void GameStop(Arena* gameArena, EngineState* engine);
+typedef void GameStop(Arena* gameArena);
 
 // ============================================================================
 // INTERNAL PLATFORM API - NOT FOR GAME USE

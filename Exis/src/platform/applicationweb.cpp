@@ -153,10 +153,10 @@ void updateAndRender(){
     registerGamepadInput(getInputState());
 
     collisionStartFrame();
-    updateCollisions(app->engine->ecs);
-    platformGameUpdate(&app->engine->gameArena, app->engine, app->dt);
-    systemUpdateTransformChildEntities(app->engine->ecs);
-    systemUpdateColliderPosition(app->engine->ecs);
+    updateCollisions();
+    platformGameUpdate(&app->engine->gameArena, app->dt);
+    systemUpdateTransformChildEntities();
+    systemUpdateColliderPosition();
     collisionEndFrame();
 
     // Audio update (stubbed for web)
@@ -166,11 +166,11 @@ void updateAndRender(){
         beginScene(RenderMode::NO_DEPTH);
             beginMode2D(*getActiveCamera());
                 renderGrid();
-                systemRenderColliders(app->engine->ecs);
+                systemRenderColliders();
             endMode2D();
         endScene();
     }
-    ecsEndFrame(app->engine->ecs);
+    ecsEndFrame();
 
     windowSwapBuffers(&app->window);
     app->endFrame = glfwGetTime();
@@ -203,7 +203,7 @@ ApplicationState initApplication(const char* name, int width, int height){
         return app;
     }
 
-    platformGameStart(&app.engine->gameArena, app.engine);
+    platformGameStart(&app.engine->gameArena);
     app.lastFrame = glfwGetTime();
     return app;
 }
@@ -216,7 +216,7 @@ void applicationRun(){
 void applicationShutDown(){
     LOGINFO("Closing application");
     emscripten_cancel_main_loop();
-    platformGameStop(&app->engine->gameArena, app->engine);
+    platformGameStop(&app->engine->gameArena);
     platformUnloadGame();  // Unload game DLL before destroying engine
     destroyEngine(app->engine);  // Clean up audio, renderer, and other resources
     glfwTerminate();
