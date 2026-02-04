@@ -61,7 +61,7 @@ void cursorPositionCallback(GLFWwindow* glfwWindow, double xpos, double ypos){
     Input* input = getInputState();
     if (!input || !window) return;
     input->mousePos = {xpos, (float)window->height - ypos};
-    LOGINFO("Mouse pos %.0fx%.0f", input->mousePos.x, input->mousePos.y);
+    //LOGINFO("Mouse pos %.0fx%.0f", input->mousePos.x, input->mousePos.y);
 }
 
 void joystickCallback(int jid, int event){
@@ -204,6 +204,7 @@ ApplicationState initApplication(const char* name, int width, int height){
     }
 
     platformGameStart(&app.engine->gameArena);
+    app.dt = 0.016;
     app.lastFrame = glfwGetTime();
     return app;
 }
