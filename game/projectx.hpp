@@ -26,7 +26,14 @@ struct GameState{
     float* vPrev;
     float* dens;
     float* densPrev;
-    float* source;
+
+    glm::vec2 mousePrev;
+
+    float diff;
+    float visc;
+
+    bool startSim;
+
     bool restart;
 
     bool pause = false;

@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "renderer/renderer.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -11,7 +12,7 @@ OrtographicCamera createCamera(float left, float right, float bottom, float top)
     camera.height = top - bottom;
 
     camera.projection = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
-    camera.view = glm::mat4(1.0f);
+    camera.view = glm::translate(glm::mat4(1.0f), -camera.position);
 
     return camera;
 }
@@ -57,10 +58,12 @@ glm::vec2 worldToScreen(const OrtographicCamera& camera, const glm::vec3& worldP
     // Perform perspective division to get NDC (normalized device coordinates)
     glm::vec3 ndc = glm::vec3(clipSpacePos) / clipSpacePos.w;
 
+    glm::vec2 screenSize = getScreenSize();
+
     // Convert NDC to screen space
-    float screenX = (ndc.x * 0.5f + 0.5f) * camera.width;
-    float screenY = (ndc.y * 0.5f + 0.5f) * camera.height;
-    screenY = camera.height - screenY;
+    float screenX = (ndc.x * 0.5f + 0.5f) * screenSize.x;
+    float screenY = (ndc.y * 0.5f + 0.5f) * screenSize.y;
+    screenY = screenSize.y - screenY;
 
     return glm::vec2(screenX, screenY);
 }
@@ -83,7 +86,7 @@ glm::vec2 screenToWorld(const OrtographicCamera& camera, const glm::vec2& screen
     glm::vec2 normalized = flipped / screenSize;
 
     // Scale to camera world size
-    glm::vec2 worldPos = normalized * glm::vec2(camera.width, camera.height);
+    glm::vec2 worldPos = (normalized - 0.5f) * glm::vec2(camera.width, camera.height);
 
     // Offset by camera position 
     worldPos += glm::vec2(camera.position.x, camera.position.y);

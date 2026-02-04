@@ -43,6 +43,10 @@ void registerGamepadInput(Input* input){
 
 void updateAndRender(){
     app->startFrame = glfwGetTime();
+    //TODO: think a better logic for the first iteration not having dt = 0
+    //if(app->dt == 0){
+    //    app->dt = 0.016;
+    //}
 
     windowPollEvents();
 
@@ -111,6 +115,7 @@ ApplicationState initApplication(const char* name, int width, int height){
     platformLoadGame(srcGameName);
 
     platformGameStart(&app.engine->gameArena);
+    app.dt = 0.016;
     app.lastFrame = glfwGetTime();
     app.quit = false;
     return app;
