@@ -27,6 +27,11 @@ struct GameState{
     float* dens;
     float* densPrev;
 
+    float *p;
+    float *div;
+
+    bool* solid;
+
     glm::vec2 mousePrev;
 
     float diff;
