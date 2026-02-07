@@ -1,0 +1,357 @@
+================================================================================
+                 RHIE-CHOW INTERPOLATION GUIDE
+            Fixing Checkerboard on a Collocated Grid
+================================================================================
+
+
+1. THE PROBLEM (recap)
+================================================================================
+
+On your collocated grid, u, v, and p all live at cell centers.
+
+Your divergence uses central differences over 2 cells:
+
+  div[i,j] = (u[i+1,j] - u[i-1,j]) / (2*dx) + (v[i,j+1] - v[i,j-1]) / (2*dy)
+
+This means cell (i,j) never "sees" its own velocity — only its neighbors
+at distance 2. Even-indexed and odd-indexed cells decouple. A pressure
+field oscillating +1, -1, +1, -1 produces zero gradient under central
+differences, so the solver can't suppress it.
+
+
+2. THE IDEA
+================================================================================
+
+Rhie-Chow says: keep everything at cell centers, but when you need to
+compute DIVERGENCE, don't use the raw cell-center velocities. Instead,
+construct "face velocities" that include a pressure correction term
+which kills the checkerboard mode.
+
+The key formula for the face velocity between cell (i,j) and cell (i+1,j):
+
+  u_face[i+1/2, j] = (u[i,j] + u[i+1,j]) / 2
+                    - d * (p[i+1,j] - p[i,j]) / dx
+                    + d * ((grad_p_wide[i] + grad_p_wide[i+1]) / 2)
+
+Where:
+  - First term: simple average of neighbors (what you'd normally do)
+  - d = coefficient, typically dx*dx / 4 (related to pressure equation)
+  - Second term: COMPACT gradient (1-cell difference) — this CAN see checkerboard
+  - Third term: average of WIDE gradients from both cells — this CANNOT see checkerboard
+
+The difference between the wide gradient and compact gradient is exactly
+the checkerboard component. The formula cancels the wide gradient and
+replaces it with the compact one.
+
+SIMPLIFICATION:
+
+  grad_p_wide[i]   = (p[i+1,j] - p[i-1,j]) / (2*dx)
+  grad_p_wide[i+1] = (p[i+2,j] - p[i,j])   / (2*dx)
+
+  average = (p[i+1,j] - p[i-1,j] + p[i+2,j] - p[i,j]) / (4*dx)
+
+In practice, for a simple iterative solver like yours, the formula
+simplifies considerably. See section 4.
+
+
+3. HOW IT FITS INTO YOUR SOLVER
+================================================================================
+
+Your current project2() does three things:
+  1. Compute divergence (from cell-center velocities)
+  2. Solve pressure (Jacobi iteration)
+  3. Subtract pressure gradient (update cell-center velocities)
+
+With Rhie-Chow, you change ONLY step 1 — the divergence calculation.
+Steps 2 and 3 stay the same.
+
+Instead of:
+  div[i,j] = (u[i+1] - u[i-1]) / (2*dx) + (v[j+1] - v[j-1]) / (2*dy)
+
+You compute face velocities first, then take the COMPACT divergence:
+  div[i,j] = (u_face_right - u_face_left) / dx
+           + (v_face_top - v_face_bottom) / dy
+
+Where u_face_right is the Rhie-Chow interpolated velocity at the face
+between (i,j) and (i+1,j).
+
+
+4. PRACTICAL IMPLEMENTATION FOR YOUR CODE
+================================================================================
+
+Here's the simplest version that works. The idea:
+
+  Face velocity = average of neighbors - pressure correction
+
+  u_face_right[i,j] = 0.5 * (u[i,j] + u[i+1,j])
+                     - (dt / (2*rho)) * (p[i+1,j] - p[i,j]) / dx
+                     + (dt / (2*rho)) * 0.5 * (  (p[i+1,j] - p[i-1,j])/(2*dx)
+                                                + (p[i+2,j] - p[i,j])  /(2*dx) )
+
+BUT: on the very first pressure solve, p = 0 everywhere, so all the
+pressure terms vanish and you just get the average. That's fine — the
+pressure terms only matter from the second projection onward (or between
+outer iterations).
+
+EVEN SIMPLER APPROACH — use the pressure from the PREVIOUS iteration:
+
+Since you're doing Jacobi iterations anyway, you can fold Rhie-Chow
+into the pressure solve itself. The standard Poisson equation:
+
+  p[i-1] + p[i+1] + p[j-1] + p[j+1] - 4*p[i,j] = (dx^2) * div[i,j]
+
+Becomes, with Rhie-Chow built in, simply using the compact divergence
+of the RAW cell-center velocities:
+
+  STEP 1: Compute divergence using compact (1-cell) differences via
+          face velocity averages:
+
+    u_face_R = 0.5 * (u[i,j] + u[i+1,j])    // right face
+    u_face_L = 0.5 * (u[i-1,j] + u[i,j])    // left face
+    v_face_T = 0.5 * (v[i,j] + v[i,j+1])    // top face
+    v_face_B = 0.5 * (v[i,j-1] + v[i,j])    // bottom face
+
+    div[i,j] = (u_face_R - u_face_L) / dx + (v_face_T - v_face_B) / dy
+
+    Which simplifies to:
+    div[i,j] = (u[i+1,j] - u[i-1,j]) / (2*dx) + (v[i,j+1] - v[i,j-1]) / (2*dy)
+
+    ...wait, that's the same central difference! So what changed?
+
+  The trick is that the PRESSURE EQUATION itself uses compact stencil.
+  The standard 5-point Laplacian already does this:
+
+    (p[i+1] - 2*p[i] + p[i-1]) / dx^2
+
+  This IS the compact second derivative. It sees checkerboard patterns.
+  The issue isn't in the pressure solve — it's that after you solve
+  for p and subtract the gradient, the CORRECTED velocity still uses
+  the wide stencil, so the divergence of the corrected field isn't
+  actually zero under the wide-stencil measurement.
+
+  THE ACTUAL FIX: After pressure projection, measure and enforce
+  divergence-free using the COMPACT divergence (face averages).
+
+OK, let me cut through the theory and give you the concrete change.
+
+
+5. THE CONCRETE CHANGE TO YOUR CODE
+================================================================================
+
+Your current project2 has three stages. Here's what changes:
+
+STAGE 1 — DIVERGENCE (change this):
+----------------------------------------------------------------------
+
+CURRENT (wide stencil, 2h):
+    div[IX(i,j)] = -0.5f * h * (uRight - uLeft + vTop - vBot);
+
+NEW (compact stencil via face averages, 1h):
+    // Average to get face velocities
+    float uFaceR = 0.5f * (u[IX(i,j)] + u[IXC(i+1,j)]);  // right face
+    float uFaceL = 0.5f * (u[IXC(i-1,j)] + u[IX(i,j)]);  // left face
+    float vFaceT = 0.5f * (v[IX(i,j)] + v[IXC(i,j+1)]);  // top face
+    float vFaceB = 0.5f * (v[IXC(i,j-1)] + v[IX(i,j)]);  // bottom face
+
+    // Handle solids: if neighbor is solid, face velocity = 0
+    if (solid[IXC(i+1,j)]) uFaceR = 0;
+    if (solid[IXC(i-1,j)]) uFaceL = 0;
+    if (solid[IXC(i,j+1)]) vFaceT = 0;
+    if (solid[IXC(i,j-1)]) vFaceB = 0;
+
+    div[IX(i,j)] = (uFaceR - uFaceL + vFaceT - vFaceB) / h;
+                    ^--- divided by h (one cell), not 2h
+
+Wait. If you expand this without solids:
+
+    uFaceR - uFaceL = 0.5*(u[i] + u[i+1]) - 0.5*(u[i-1] + u[i])
+                     = 0.5*(u[i+1] - u[i-1])
+
+    So div = 0.5*(u[i+1] - u[i-1]) / h = same as (u[i+1] - u[i-1]) / (2h)
+
+It's mathematically identical for uniform grids without solids!
+
+The difference only appears at BOUNDARIES (where faces become walls)
+and in the PRESSURE GRADIENT step.
+
+
+STAGE 2 — PRESSURE SOLVE (change the divisor):
+----------------------------------------------------------------------
+
+CURRENT:
+    p[IX(i,j)] = (div[IX(i,j)] + pL + pR + pB + pT) / 4;
+
+NEW:
+    int n = 0;
+    float sumP = 0;
+    if (!solid[IXC(i+1,j)]) { sumP += p[IXC(i+1,j)]; n++; }
+    if (!solid[IXC(i-1,j)]) { sumP += p[IXC(i-1,j)]; n++; }
+    if (!solid[IXC(i,j+1)]) { sumP += p[IXC(i,j+1)]; n++; }
+    if (!solid[IXC(i,j-1)]) { sumP += p[IXC(i,j-1)]; n++; }
+    if (n > 0)
+        p[IX(i,j)] = (sumP - h*h * div[IX(i,j)]) / n;
+
+NOTE: Your current code uses "p[IX(i,j)]" as substitute for solid
+neighbors, which implicitly handles the reduced divisor. That's fine
+but the explicit version above is clearer and avoids subtle bugs.
+
+NOTE 2: The sign depends on how you defined div. If your divergence
+already has a negative sign baked in (like Stam's -0.5*h*(...)), adjust
+accordingly. I'm using the physics convention: div = outflow, and the
+Poisson equation is: laplacian(p) = div, so:
+    sumP - n*p = dx^2 * div
+    p = (sumP - dx^2 * div) / n
+
+
+STAGE 3 — GRADIENT SUBTRACTION (keep using central differences):
+----------------------------------------------------------------------
+
+This part stays the same:
+    u[IX(i,j)] -= 0.5f * (pR - pL) / h;
+    v[IX(i,j)] -= 0.5f * (pT - pB) / h;
+
+Yes, this is still a wide (2h) stencil. That's OK. The cell-center
+velocity will have a small checkerboard residual, but the FACE
+velocities (used for divergence and advection) won't.
+
+THE KEY INSIGHT: After projection, when you compute face velocities
+for advection, use the Rhie-Chow formula, not raw averages:
+
+    u_face[i+1/2] = 0.5*(u[i] + u[i+1]) - coeff*(p[i+1] - p[i])/dx
+                  + coeff*0.5*( (p[i+1]-p[i-1])/(2*dx) + (p[i+2]-p[i])/(2*dx) )
+
+Or equivalently, since the gradient already subtracted the wide stencil:
+
+    u_corrected[i] = u_star[i] - (p[i+1]-p[i-1])/(2*dx)    (already done)
+
+    u_face[i+1/2] = 0.5*(u_corrected[i] + u_corrected[i+1])
+                   + coeff * ( (p[i+1]-p[i-1])/(2*dx) + (p[i+2]-p[i])/(2*dx) ) / 2
+                   - coeff * (p[i+1] - p[i]) / dx
+
+Where coeff = dx*dx (from the pressure equation coefficient).
+
+This is getting complicated. Let me give you the SIMPLEST thing that
+actually helps.
+
+
+6. THE SIMPLEST EFFECTIVE FIX (do this)
+================================================================================
+
+Forget the full Rhie-Chow formula. The MINIMUM change that fixes your
+main problem is:
+
+A) In the DIVERGENCE calculation, use face-averaged velocities and
+   handle solid boundaries by zeroing wall faces:
+
+    for each fluid cell (i,j):
+        float uR = solid[IXC(i+1,j)] ? 0.0f : 0.5f*(u[IX(i,j)] + u[IXC(i+1,j)]);
+        float uL = solid[IXC(i-1,j)] ? 0.0f : 0.5f*(u[IXC(i-1,j)] + u[IX(i,j)]);
+        float vT = solid[IXC(i,j+1)] ? 0.0f : 0.5f*(v[IX(i,j)] + v[IXC(i,j+1)]);
+        float vB = solid[IXC(i,j-1)] ? 0.0f : 0.5f*(v[IXC(i,j-1)] + v[IX(i,j)]);
+
+        div[IX(i,j)] = (uR - uL + vT - vB) / h;
+
+B) In the PRESSURE SOLVE, count actual fluid neighbors:
+
+    for each fluid cell (i,j):
+        int n = 0;
+        float sumP = 0;
+        if (!solid[IXC(i-1,j)]) { sumP += p[IXC(i-1,j)]; n++; }
+        if (!solid[IXC(i+1,j)]) { sumP += p[IXC(i+1,j)]; n++; }
+        if (!solid[IXC(i,j-1)]) { sumP += p[IXC(i,j-1)]; n++; }
+        if (!solid[IXC(i,j+1)]) { sumP += p[IXC(i,j+1)]; n++; }
+        if (n > 0)
+            p[IX(i,j)] = (sumP - h*h*div[IX(i,j)]) / n;
+
+C) In the GRADIENT SUBTRACTION, use one-sided differences at walls:
+
+    for each fluid cell (i,j):
+        float gradX, gradY;
+
+        bool solidL = solid[IXC(i-1,j)];
+        bool solidR = solid[IXC(i+1,j)];
+        bool solidB = solid[IXC(i,j-1)];
+        bool solidT = solid[IXC(i,j+1)];
+
+        if (solidL && !solidR)
+            gradX = (p[IXC(i+1,j)] - p[IX(i,j)]) / h;        // forward
+        else if (!solidL && solidR)
+            gradX = (p[IX(i,j)] - p[IXC(i-1,j)]) / h;        // backward
+        else if (!solidL && !solidR)
+            gradX = (p[IXC(i+1,j)] - p[IXC(i-1,j)]) / (2*h); // central
+        else
+            gradX = 0;  // both sides solid
+
+        // Same for Y
+        if (solidB && !solidT)
+            gradY = (p[IXC(i,j+1)] - p[IX(i,j)]) / h;
+        else if (!solidB && solidT)
+            gradY = (p[IX(i,j)] - p[IXC(i,j-1)]) / h;
+        else if (!solidB && !solidT)
+            gradY = (p[IXC(i,j+1)] - p[IXC(i,j-1)]) / (2*h);
+        else
+            gradY = 0;
+
+        u[IX(i,j)] -= gradX;
+        v[IX(i,j)] -= gradY;
+
+D) In ADVECTION, when computing the velocity to backtrace with, use
+   face-averaged velocities at the cell center:
+
+    For cell (i,j):
+        float u_here = 0.5f * (u_at_left_face + u_at_right_face);
+        float v_here = 0.5f * (v_at_bottom_face + v_at_top_face);
+
+    On a collocated grid u[i,j] IS at the center already, so you can
+    use it directly. The face averaging only matters for the divergence
+    calculation and is already handled above.
+
+
+7. WHY THIS HELPS
+================================================================================
+
+The key changes:
+
+1. DIVERGENCE with face averages + wall zeroing: This makes the
+   divergence consistent with the physical flux through each face.
+   At walls, flux = 0. In the interior it's the same as central
+   differences, but at boundaries it's correct.
+
+2. VARIABLE DIVISOR in pressure solve: A cell next to a wall has
+   fewer pressure neighbors. Dividing by 4 when only 3 neighbors
+   are fluid gives the wrong pressure. This is critical for
+   correct behavior near boundaries.
+
+3. ONE-SIDED gradients near walls: When one side is a wall, using
+   central differences includes a "phantom" pressure that doesn't
+   exist. One-sided differences use only real pressure values.
+
+Together, these three changes make your collocated solver behave
+much more consistently near boundaries, which is where most of
+your divergence residual is coming from.
+
+The full Rhie-Chow correction (with the pressure difference terms
+on faces) would further suppress interior checkerboard modes, but
+for a visual fluid sim, the boundary fixes above are usually
+sufficient to get good-looking results.
+
+
+8. IF YOU STILL SEE CHECKERBOARD AFTER THE ABOVE
+================================================================================
+
+Add a simple pressure smoothing step after the Jacobi solve:
+
+    for each fluid cell (i,j):
+        float avg = 0;
+        int n = 0;
+        if (!solid[IXC(i-1,j)]) { avg += p[IXC(i-1,j)]; n++; }
+        if (!solid[IXC(i+1,j)]) { avg += p[IXC(i+1,j)]; n++; }
+        if (!solid[IXC(i,j-1)]) { avg += p[IXC(i,j-1)]; n++; }
+        if (!solid[IXC(i,j+1)]) { avg += p[IXC(i,j+1)]; n++; }
+        if (n > 0)
+            p_smooth[IX(i,j)] = 0.75*p[IX(i,j)] + 0.25*(avg/n);
+
+This blends each pressure value slightly toward its neighbors,
+killing high-frequency oscillations. The 0.75/0.25 split is gentle
+enough not to ruin the solution. Use the smoothed pressure for
+the gradient subtraction.
