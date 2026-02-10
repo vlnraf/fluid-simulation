@@ -16,10 +16,12 @@
 #endif
 
 #include "core.hpp"
+#include "fluidsimulator.hpp"
 
 struct GameState{
     Arena* arena;
     OrtographicCamera mainCamera;
+    FluidSimulator fs;
     float* u;
     float* uPrev;
     float* v;
