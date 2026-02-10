@@ -13,7 +13,7 @@ struct String8{
 
 CORE_API String8 cStringFromString8(Arena* arena, String8 string);
 CORE_API String8 string8FromCString(char* string);
-CORE_API String8 pushString8FV(Arena* arena, char* fmt, ...); //Format Vector
-CORE_API String8 pushString8F(Arena* arena, char* fmt, ...); //Format
+CORE_API String8 pushString8FV(Arena* arena, const char* fmt, ...); //Format Vector
+CORE_API String8 pushString8F(Arena* arena, const char* fmt, ...); //Format
 
 #endif

@@ -22,7 +22,7 @@ String8 string8FromCString(char* string){
     return result;
 }
 
-String8 pushString8FV(Arena* arena, char* fmt, va_list args){
+String8 pushString8FV(Arena* arena, const char* fmt, va_list args){
     String8 result = {0};
     va_list args2;
     va_copy(args2, args);
@@ -34,7 +34,7 @@ String8 pushString8FV(Arena* arena, char* fmt, va_list args){
     return result;
 }
 
-String8 pushString8F(Arena* arena, char* fmt, ...){
+String8 pushString8F(Arena* arena, const char* fmt, ...){
     String8 result = {0};
 
     va_list args;
