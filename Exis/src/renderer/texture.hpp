@@ -14,6 +14,28 @@
 
 typedef uint32_t TextureHandle;
 
+enum TextureFormat{
+    TEXTURE_R8,
+    TEXTURE_RG8,
+    TEXTURE_RGB,
+    TEXTURE_RGBA,
+    TEXTURE_R32F,
+    TEXTURE_RG32F,
+    TEXTURE_RGB32F,
+    TEXTURE_RGBA32F
+};
+
+enum TextureFilter{
+    TEXTURE_FILTER_NEAREST,
+    TEXTURE_FILTER_LINEAR
+};
+
+enum TextureWrap{
+    TEXTURE_WRAP_REPEAT,
+    TEXTURE_WRAP_CLAMP_TO_EDGE,
+    TEXTURE_WRAP_MIRRORED_REPEAT
+};
+
 struct Texture{
     uint32_t id;
     int width, height, nrChannels;
@@ -41,9 +63,12 @@ CORE_API Texture* getTextureByName(const char* fileName);
 CORE_API Texture* getTextureByHandle(TextureHandle handle);
 CORE_API TextureHandle loadTextureFullPath(const char* path);
 CORE_API Texture* getTextureFullPath(const char* path);
-CORE_API RenderTexture loadRenderTexture(int width, int height);
+CORE_API RenderTexture loadRenderTexture(int width, int height, uint16_t format = TEXTURE_RGBA);
 CORE_API void destroyRenderTexture(RenderTexture* renderTexture);
 
+
+CORE_API void getImageFromTexture(void* image, Texture* texture, uint16_t format = TEXTURE_RGBA);
+CORE_API void setImageToTexture(void* image, Texture* texture, uint16_t format = TEXTURE_RGBA);
 //Texture* getTexture(uint32_t idx);
 TextureHandle loadFontTexture(const char* path, FT_Face face);
 //unsigned char* createTexture(const char* filepath, Texture* texture);

@@ -292,7 +292,7 @@ TextureHandle loadFontTexture(const char* path, FT_Face face){
     return hash;
 }
 
-RenderTexture loadRenderTexture(int width, int height){
+RenderTexture loadRenderTexture(int width, int height, uint16_t format){
     RenderTexture result;
     Texture texture = {};
     result.texture = texture;
@@ -301,7 +301,15 @@ RenderTexture loadRenderTexture(int width, int height){
     result.texture.size = {width, height};
     genFrameBuffer(&result.fbo);
     genRenderBuffer(&result.rbo);
-    genRenderTexture(&result.texture.id, result.texture.width, result.texture.height);
+    genRenderTexture(&result.texture.id, result.texture.width, result.texture.height, format);
+
+    // Attach texture and renderbuffer to FBO once at creation
+    bindFrameBuffer(result.fbo);
+    attachFrameBuffer(result.texture.id);
+    bindRenderBuffer(result.rbo);
+    attachRenderBuffer(result.fbo, result.texture.width, result.texture.height);
+    unbindFrameBuffer();
+
     return result;
 }
 
@@ -318,6 +326,20 @@ void destroyRenderTexture(RenderTexture* renderTexture){
         deleteRenderBuffer(renderTexture->rbo);
         renderTexture->rbo = 0;
     }
+}
+
+void getImageFromTexture(void* image, Texture* texture, uint16_t format){
+    GLenum internalFormat, pixelFormat, texType;
+    toGLFormat(format, &internalFormat, &pixelFormat, &texType);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glGetTexImage(GL_TEXTURE_2D, 0, pixelFormat, texType, image);
+}
+
+void setImageToTexture(void* image, Texture* texture, uint16_t format){
+    GLenum internalFormat, pixelFormat, texType;
+    toGLFormat(format, &internalFormat, &pixelFormat, &texType);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->width, texture->height, pixelFormat, texType, image);
 }
 
 //------------------------ Deprecated --------------------------- 
