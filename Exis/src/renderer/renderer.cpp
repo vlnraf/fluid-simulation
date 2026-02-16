@@ -77,28 +77,109 @@ void unbindRenderBuffer(){
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
-void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height){
+void toGLFormat(uint16_t format, uint32_t* internalFormat, uint32_t* pixelFormat, uint32_t* texType){
+    switch(format){
+        case TEXTURE_R8:{
+            *internalFormat = GL_R8;
+            *pixelFormat = GL_RED;
+            *texType = GL_UNSIGNED_BYTE;
+            break;
+        }
+        case TEXTURE_RG8:{
+            *internalFormat = GL_RG8;
+            *pixelFormat = GL_RG;
+            *texType = GL_UNSIGNED_BYTE;
+            break;
+        }
+        case TEXTURE_RGB:{
+            *internalFormat = GL_RGB;
+            *pixelFormat = GL_RGB;
+            *texType = GL_UNSIGNED_BYTE;
+            break;
+        }
+        default:
+        case TEXTURE_RGBA:{
+            *internalFormat = GL_RGBA;
+            *pixelFormat = GL_RGBA;
+            *texType = GL_UNSIGNED_BYTE;
+            break;
+        }
+        case TEXTURE_R32F:{
+            *internalFormat = GL_R32F;
+            *pixelFormat = GL_RED;
+            *texType = GL_FLOAT;
+            break;
+        }
+        case TEXTURE_RG32F:{
+            *internalFormat = GL_RG32F;
+            *pixelFormat = GL_RG;
+            *texType = GL_FLOAT;
+            break;
+        }
+        case TEXTURE_RGB32F:{
+            *internalFormat = GL_RGB32F;
+            *pixelFormat = GL_RGB;
+            *texType = GL_FLOAT;
+            break;
+        }
+        case TEXTURE_RGBA32F:{
+            *internalFormat = GL_RGBA32F;
+            *pixelFormat = GL_RGBA;
+            *texType = GL_FLOAT;
+            break;
+        }
+    }
+}
+
+void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format){
+    uint32_t internalFormat, pixelFormat, texType;
+    toGLFormat(format, &internalFormat, &pixelFormat, &texType);
     glGenTextures(1, texture);
     glBindTexture(GL_TEXTURE_2D, *texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, texType, NULL);
+    Texture temp = {};
+    temp.id = *texture;
+    setTextureWrap(&temp, TEXTURE_WRAP_REPEAT, TEXTURE_WRAP_REPEAT);
+    setTextureFilter(&temp, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
 }
 
 void genTexture(Texture* texture, uint32_t format, unsigned char* data){
     glGenTextures(1, &texture->id);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 
-    // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
     glTexImage2D(GL_TEXTURE_2D, 0, format, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, data);
+    setTextureWrap(texture, TEXTURE_WRAP_REPEAT, TEXTURE_WRAP_REPEAT);
+    setTextureFilter(texture, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
+}
+
+GLenum toGLFilter(uint16_t filter){
+    switch(filter){
+        case TEXTURE_FILTER_LINEAR:  return GL_LINEAR;
+        case TEXTURE_FILTER_NEAREST: return GL_NEAREST;
+        default:             return GL_NEAREST;
+    }
+}
+
+GLenum toGLWrap(uint16_t wrap){
+    switch(wrap){
+        case TEXTURE_WRAP_REPEAT:          return GL_REPEAT;
+        case TEXTURE_WRAP_CLAMP_TO_EDGE:   return GL_CLAMP_TO_EDGE;
+        case TEXTURE_WRAP_MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
+        default:                   return GL_REPEAT;
+    }
+}
+
+void setTextureFilter(Texture* texture, uint16_t minFilter, uint16_t magFilter){
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, toGLFilter(minFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, toGLFilter(magFilter));
+}
+
+void setTextureWrap(Texture* texture, uint16_t wrapS, uint16_t wrapT){
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, toGLWrap(wrapS));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, toGLWrap(wrapT));
 }
 
 void attachFrameBuffer(uint32_t texture){
@@ -160,6 +241,15 @@ void enableDepthTest(){
 
 void disableDepthTest(){
     glDisable(GL_DEPTH_TEST);
+}
+
+void disableBlending(){
+    glDisable(GL_BLEND);
+}
+
+//TODO: set also the blending function
+void enableBlending(){
+    glEnable(GL_BLEND);
 }
 
 
@@ -286,24 +376,21 @@ void beginMode2D(OrtographicCamera camera){
     renderStartBatch();
 }
 
-void beginTextureMode(RenderTexture* renderTexture){
+void beginTextureMode(RenderTexture* renderTexture, bool clear){
     renderFlush();  // Flush any pending draws
 
     bindFrameBuffer(renderTexture->fbo);
-    attachFrameBuffer(renderTexture->texture.id);
-    bindRenderBuffer(renderTexture->rbo);
-    attachRenderBuffer(renderTexture->fbo, renderTexture->texture.width, renderTexture->texture.height);
 
-    // Check framebuffer is complete
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
-        LOGERROR("Framebuffer is not complete!");
-    }
-
-    // Set viewport for framebuffer
+    // Save current camera and set one matching the render texture
+    renderer->previousCamera = renderer->activeCamera;
+    renderer->activeCamera = createCamera(0.0f, renderTexture->texture.width, 0.0f, renderTexture->texture.height);
     setViewport(0, 0, renderTexture->texture.width, renderTexture->texture.height);
 
-    //glClearColor(0,0,0,1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if(clear){
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }else{
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
 
     renderStartBatch();
 }
@@ -332,7 +419,8 @@ void endTextureMode(){
     renderFlush();  // Flush framebuffer draws
     unbindFrameBuffer();
 
-    setViewport(0, 0, (uint32_t)renderer->screenCamera.width, (uint32_t)renderer->screenCamera.height);
+    renderer->activeCamera = renderer->previousCamera;
+    setViewport(0, 0, renderer->width, renderer->height);
 
     renderStartBatch();  // Start fresh batch for screen rendering
 }
@@ -353,12 +441,12 @@ void endScene(){
 }
 
 void renderStartBatch(){
-    renderer->quadVertices = arenaAllocArrayZero(&renderer->frameArena, Vertex, MAX_VERTICES);
-    renderer->lineVertices = arenaAllocArrayZero(&renderer->frameArena, Vertex, MAX_VERTICES_LINES);
-    renderer->simpleVertices = arenaAllocArrayZero(&renderer->frameArena, Vertex, MAX_VERTICES);
-    renderer->circleVertices = arenaAllocArrayZero(&renderer->frameArena, Vertex, MAX_VERTICES);
+    renderer->quadVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES);
+    renderer->lineVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES_LINES);
+    renderer->simpleVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES);
+    renderer->circleVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES);
 
-    renderer->textures = arenaAllocArrayZero(&renderer->frameArena, const Texture*, MAX_TEXTURES_BIND);
+    renderer->textures = arenaAllocArray(&renderer->frameArena, const Texture*, MAX_TEXTURES_BIND);
     renderer->textures[0] = getTextureByName("default");
     renderer->textureCount = 1;
     renderer->quadVertexCount = 0;
@@ -577,6 +665,10 @@ void renderDrawQuadEx(glm::vec3 position, const glm::vec2 size, const glm::vec3 
 
 void renderDrawLine(const glm::vec2 p0, const glm::vec2 p1, const glm::vec4 color, const float layer){
     //float normLayer = layer + (1.0f - (1.0f / camera.height));
+    if(renderer->lineVertexCount >= MAX_VERTICES_LINES){
+        renderFlush();
+        renderStartBatch();
+    }
 
     glm::vec4 verterxColor[] = { {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
     glm::vec4 vertexPosition[] = {{p0.x, p0.y, layer, 1.0f},

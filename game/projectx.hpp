@@ -34,7 +34,29 @@ struct GameState{
 
     bool* solid;
 
+    RenderTexture vx;
+    RenderTexture vy;
+    RenderTexture vxPrev;
+    RenderTexture vyPrev;
+    RenderTexture pTexture;
+    RenderTexture pTexturePrev;
+    RenderTexture divTexture;
+    RenderTexture densTexture;
+    RenderTexture densTexturePrev;
+    bool pingPongDens = false;
+    OrtographicCamera texCamera;
+    Shader advect;
+    Shader test;
+    Shader divShader;
+    Shader pShader;
+    bool pingPong = false;
+    bool pingPongPressure = false;
+    void* imageVx;
+    void* imageVy;
+    void* imageDens;
+
     glm::vec2 mousePrev;
+    glm::vec2 mousePrevScreen;
 
     float diff;
     float visc;

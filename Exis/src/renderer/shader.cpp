@@ -217,5 +217,13 @@ void setUniform(const Shader* shader, const char* name , const glm::vec3 value){
 void setUniform(const Shader* shader, const char* name , const glm::vec2 value){
     useShader(shader);
     int uniformId = glGetUniformLocation(shader->id, name);
-    glUniform3fv(uniformId, 1, glm::value_ptr(value));
+    glUniform2fv(uniformId, 1, glm::value_ptr(value));
+}
+
+void bindTextureToShader(const Shader* shader, const char* name, const uint32_t texture, int unit){
+    useShader(shader);
+    int uniformId = glGetUniformLocation(shader->id, name);
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(uniformId, unit);
 }

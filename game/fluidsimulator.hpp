@@ -12,6 +12,7 @@ struct FluidSimulator{
     float* u; //horizontal velocities
     float* vTemp; //vertical velocities
     float* uTemp; //horizontal velocities
+    bool* solid;
 
     float density;
     int gridSizeX;
@@ -23,6 +24,7 @@ void drawVelocities(FluidSimulator* fs);
 void drawGrid(FluidSimulator* fs);
 void drawDivergence(FluidSimulator* fs);
 void drawDensity(FluidSimulator* fs);
+void drawPressure(FluidSimulator* fs);
 
 FluidSimulator createFluidSimulator(Arena* a, int countX, int countY, int cellSize);
 int ij(FluidSimulator* fs, int i, int j);

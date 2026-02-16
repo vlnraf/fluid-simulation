@@ -78,6 +78,7 @@ struct Renderer{
 
     OrtographicCamera screenCamera;
     OrtographicCamera activeCamera;
+    OrtographicCamera previousCamera;
 
     uint32_t drawCalls = 0;
     uint32_t quadVertexCount = 0;
@@ -103,8 +104,11 @@ void genVertexArrayObject(uint32_t* vao);
 void genVertexBuffer(uint32_t* vbo);
 void genFrameBuffer(uint32_t* fbo);
 void genRenderBuffer(uint32_t* rbo);
+void toGLFormat(uint16_t format, uint32_t* internalFormat, uint32_t* pixelFormat, uint32_t* texType);
 void genTexture(Texture* texture, uint32_t format, unsigned char* data);
-void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height);
+void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format = TEXTURE_RGBA);
+CORE_API void setTextureFilter(Texture* texture, uint16_t minFilter, uint16_t magFilter);
+CORE_API void setTextureWrap(Texture* texture, uint16_t wrapS, uint16_t wrapT);
 
 // Low-level OpenGL resource destruction
 void deleteVertexArrayObject(uint32_t vao);
@@ -131,11 +135,14 @@ void setShader(Renderer* renderer, const Shader shader);
 
 glm::vec4 calculateUV(const Texture* texture, glm::vec2 index, glm::vec2 size, glm::vec2 offset);
 
+void attachFrameBuffer(uint32_t texture);
+void attachRenderBuffer(uint32_t rbo, uint32_t width, uint32_t height);
+
 
 //------------------HIGH LEVEL RENDERER-----------------------------
 CORE_API void clearColor(float r, float g, float b, float a);
 
-CORE_API void beginTextureMode(RenderTexture* texture);
+CORE_API void beginTextureMode(RenderTexture* texture, bool clear = true);
 CORE_API void endTextureMode();
 CORE_API void beginScene(RenderMode mode = NORMAL);
 CORE_API void beginMode2D(OrtographicCamera camera);
@@ -145,6 +152,8 @@ CORE_API void beginShaderMode(Shader* shader);
 CORE_API void endShaderMode();
 CORE_API void beginDepthMode();
 CORE_API void endDepthMode();
+CORE_API void disableBlending();
+CORE_API void enableBlending();
 
 // 3D Quad Drawing
 // Note: position.z is the base layer, ySort dynamically adjusts it based on Y position for depth sorting
