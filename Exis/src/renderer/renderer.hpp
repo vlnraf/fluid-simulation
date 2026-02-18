@@ -106,7 +106,8 @@ void genFrameBuffer(uint32_t* fbo);
 void genRenderBuffer(uint32_t* rbo);
 void toGLFormat(uint16_t format, uint32_t* internalFormat, uint32_t* pixelFormat, uint32_t* texType);
 void genTexture(Texture* texture, uint32_t format, unsigned char* data);
-void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format = TEXTURE_RGBA);
+//void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format = TEXTURE_RGBA);
+void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format = TEXTURE_RGBA, unsigned char* data = NULL);
 CORE_API void setTextureFilter(Texture* texture, uint16_t minFilter, uint16_t magFilter);
 CORE_API void setTextureWrap(Texture* texture, uint16_t wrapS, uint16_t wrapT);
 
