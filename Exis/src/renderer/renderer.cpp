@@ -131,13 +131,13 @@ void toGLFormat(uint16_t format, uint32_t* internalFormat, uint32_t* pixelFormat
     }
 }
 
-void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format){
+void genRenderTexture(uint32_t* texture, uint32_t width, uint32_t height, uint16_t format, unsigned char* data){
     uint32_t internalFormat, pixelFormat, texType;
     toGLFormat(format, &internalFormat, &pixelFormat, &texType);
     glGenTextures(1, texture);
     glBindTexture(GL_TEXTURE_2D, *texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, texType, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, texType, data);
     Texture temp = {};
     temp.id = *texture;
     setTextureWrap(&temp, TEXTURE_WRAP_REPEAT, TEXTURE_WRAP_REPEAT);

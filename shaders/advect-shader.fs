@@ -9,7 +9,7 @@ uniform sampler2D textureVy;
 uniform sampler2D pTexture;
 uniform sampler2D densTexture;
 uniform vec2 textureSize;      // size of the texture being advected (self)
-uniform vec2 textureSizeOther; // size of the cross-component texture (or pressure size for projection)
+uniform vec2 textureSizeOther; // size of the ross-component texture (or pressure size for projection)
 uniform float dt;
 uniform int mode;
 
@@ -17,6 +17,27 @@ uniform int mode;
 //uniform sampler2D sprite[16];
 
 out float FragColor;
+
+int isBoundary(ivec2 ij){
+    if(ij.x == 0 || ij.x >= (textureSize.x - 1)){
+        return 2;
+    }
+    if(ij.y == 0 || ij.y >= (textureSize.y - 1)){
+        return 1;
+    }
+
+    float radius = 50;
+    vec2 pos = vec2(200, textureSize.y / 2);
+    if(length(ij - pos) <= radius){
+        return 1;
+    }
+
+    //if((ij.x >= (pos-radius).x && ij.x <= (pos+radius).x) && (ij.y >= (pos-radius).y && ij.y <= (pos+radius).y)){
+    //    return true;
+    //}
+    return 0;
+}
+
 
 // Interpolate u to a v-face location (called from mode 1, samples textureVx)
 // CPU: u[i,j-1], u[i+1,j-1], u[i,j], u[i+1,j]
@@ -103,7 +124,18 @@ void main()
         float i0i1 = mix(texelFetch(textureVx, ivec2(i0,j0), 0).r, texelFetch(textureVx, ivec2(i1,j0), 0).r, a);
         float j0j1 = mix(texelFetch(textureVx, ivec2(i0,j1), 0).r, texelFetch(textureVx, ivec2(i1,j1), 0).r, a);
         float res = mix(i0i1, j0j1, b);
-        FragColor = res;
+        //isBoundary(ij) ? FragColor = 0 : FragColor = res;
+        //(isBoundary(ij) == 1) ? FragColor = 0 : FragColor = res;
+        if(isBoundary(ij) == 0){
+            FragColor = res;
+        }else if (isBoundary(ij) == 1){
+            FragColor = 0;
+        }else if(isBoundary(ij) == 2 && ij.x == 0){
+            FragColor = texelFetch(textureVx, ivec2(ij.x + 1, ij.y), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.x >= textureSize.x-1){
+            FragColor = texelFetch(textureVx, ivec2(ij.x - 1, ij.y), 0).r;
+        }
+        //FragColor = res;
         //FragColor = velocityX;
     }else if(mode == 1){    //vertical advection
         vec2 uv = TexCoord;
@@ -130,7 +162,17 @@ void main()
         float i0i1 = mix(texelFetch(textureVy, ivec2(i0,j0), 0).r, texelFetch(textureVy, ivec2(i1,j0), 0).r, a);
         float j0j1 = mix(texelFetch(textureVy, ivec2(i0,j1), 0).r, texelFetch(textureVy, ivec2(i1,j1), 0).r, a);
         float res = mix(i0i1, j0j1, b);
-        FragColor = res;
+        //(isBoundary(ij) == 1) ? FragColor = 0 : FragColor = res;
+        if(isBoundary(ij) == 0){
+            FragColor = res;
+        }else if (isBoundary(ij) == 1){
+            FragColor = 0;
+        }else if(isBoundary(ij) == 2 && ij.y == 0){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
+        }
+        //FragColor = res;
         //FragColor = velocityY;
     }else if(mode == 2){
         // Passthrough: output vertex color's red channel
@@ -156,6 +198,13 @@ void main()
             float pLeft  = texelFetch(pTexture, ivec2(ij.x - 1, ij.y), 0).r;
             FragColor = texelFetch(textureVx, ij, 0).r - (pRight - pLeft);
         }
+        if (isBoundary(ij) == 1){
+            FragColor = 0;
+        }else if(isBoundary(ij) == 2 && ij.y == 0){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
+        }
     }else if(mode == 5){
         // Project v: v[i,j] -= p[i,j] - p[i,j-1]
         // textureSize = v-texture size (640, 321)
@@ -171,6 +220,13 @@ void main()
             float pTop    = texelFetch(pTexture, ivec2(ij.x, ij.y), 0).r;
             float pBottom = texelFetch(pTexture, ivec2(ij.x, ij.y - 1), 0).r;
             FragColor = texelFetch(textureVy, ij, 0).r - (pTop - pBottom);
+        }
+        if (isBoundary(ij) == 1){
+            FragColor = 0;
+        }else if(isBoundary(ij) == 2 && ij.y == 0){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
+            FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
         }
     }else if(mode == 6){
         // Advect density (cell-centered)
@@ -204,6 +260,22 @@ void main()
                          texelFetch(densTexture, ivec2(i1, j0), 0).r, a);
         float row1 = mix(texelFetch(densTexture, ivec2(i0, j1), 0).r,
                          texelFetch(densTexture, ivec2(i1, j1), 0).r, a);
-        FragColor = mix(row0, row1, b);
+        float res = mix(row0, row1, b);
+        //isBoundary(ij) ? FragColor = 0 : FragColor = res;
+        //(isBoundary(ij) == 1) ? FragColor = 0 : FragColor = res;
+        if(isBoundary(ij) == 0){
+            FragColor = res;
+        }else if (isBoundary(ij) == 1){
+            FragColor = 0;
+        }else if(isBoundary(ij) == 2 && ij.x == 0){
+            FragColor = texelFetch(densTexture, ivec2(ij.x+1, ij.y), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.x >= textureSize.x-1){
+            FragColor = texelFetch(densTexture, ivec2(ij.x-1, ij.y), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.y == 0){
+            FragColor = texelFetch(densTexture, ivec2(ij.x, ij.y+1), 0).r;
+        }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
+            FragColor = texelFetch(densTexture, ivec2(ij.x, ij.y-1), 0).r;
+        }
+        //FragColor = mix(row0, row1, b);
     }
 }

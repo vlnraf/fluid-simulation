@@ -322,6 +322,7 @@ GAME_API void gameStart(Arena* arena){
         }
     }
     loadFont("Roboto-Regular");
+    loadTexture("1");
     gs->vx = loadRenderTexture(SIM_W+1, SIM_H, TEXTURE_R32F);
     gs->vy = loadRenderTexture(SIM_W, SIM_H+1, TEXTURE_R32F);
     gs->vxPrev = loadRenderTexture(SIM_W+1, SIM_H, TEXTURE_R32F);
@@ -354,6 +355,16 @@ GAME_API void gameStart(Arena* arena){
     setTextureWrap(&gs->densTexture.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
     setTextureFilter(&gs->densTexturePrev.texture, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
     setTextureWrap(&gs->densTexturePrev.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
+
+    #if 0 
+    beginTextureMode(&gs->densTexture, false);
+        renderDrawQuad2D({0,0}, gs->densTexture.texture.size, 0, getTextureByName("1"), {1,1,1,1});
+    endTextureMode();
+
+    beginTextureMode(&gs->densTexturePrev, false);
+        renderDrawQuad2D({0,0}, gs->densTexturePrev.texture.size, 0, getTextureByName("1"), {1,1,1,1});
+    endTextureMode();
+    #endif
 
     gs->imageVx = arenaAllocArrayZero(gs->arena, float, (SIM_W+1)*SIM_H);
     gs->imageVy = arenaAllocArrayZero(gs->arena, float, SIM_W*(SIM_H+1));
@@ -468,7 +479,6 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         getImageFromTexture(vxData, &srcVx->texture, TEXTURE_R32F);
         getImageFromTexture(vyData, &srcVy->texture, TEXTURE_R32F);
         getImageFromTexture(densData, &srcDens->texture, TEXTURE_R32F);
-
         float quadLeft = getScreenSize().x / 2.0f - SIM_W / 2.0f;
         float quadBottom = getScreenSize().y / 2.0f + SIM_H / 2.0f;
         float mouseY = getScreenSize().y - mouseScreen.y;
@@ -476,12 +486,22 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         float texY = quadBottom - mouseY;
         float deltax = mouseScreen.x - gs->mousePrevScreen.x;
         float deltay = mouseScreen.y - gs->mousePrevScreen.y;
-        float force = 0.2f;
+        float force = 0.5f;
         int radius = 10;
         int velRadius = 10;
 
         int ci = (int)texX;
         int cj = (int)texY;
+
+        for(int j = 0; j < SIM_H; j++){
+            for(int i = 0; i <= SIM_W; i++){
+                vxData[i + (SIM_W+1) * j] = 5.0f;
+            }
+        }
+        for(int j = SIM_H / 2 - 25; j <= SIM_H / 2 + 25; j++){
+            densData[1 + (SIM_W) * j] = 1.0f;
+        }
+
 
         for(int dj = -velRadius; dj <= velRadius; dj++){
             for(int di = -velRadius; di <= velRadius; di++){
@@ -567,7 +587,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     endTextureMode();
 
     RenderTexture* pFinal = NULL;
-    for(int i = 0; i < 20; i++){
+    for(int i = 0; i < 50; i++){
         RenderTexture* psrc = (gs->pingPongPressure) ? &gs->pTexturePrev : &gs->pTexture;
         RenderTexture* pdst = (gs->pingPongPressure) ? &gs->pTexture     : &gs->pTexturePrev;
 

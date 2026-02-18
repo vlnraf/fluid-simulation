@@ -293,9 +293,7 @@ TextureHandle loadFontTexture(const char* path, FT_Face face){
 }
 
 RenderTexture loadRenderTexture(int width, int height, uint16_t format){
-    RenderTexture result;
-    Texture texture = {};
-    result.texture = texture;
+    RenderTexture result = {};
     result.texture.width = width;
     result.texture.height = height;
     result.texture.size = {width, height};
