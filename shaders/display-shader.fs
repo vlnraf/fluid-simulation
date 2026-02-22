@@ -12,7 +12,6 @@ out vec4 FragColor;
 void main()
 {
     float v = texture(textureIn, TexCoord).r;
-    //float o = texture(textureIn2, TexCoord).r * v;
-    //FragColor = vec4(v, v, v, 1.0);
+    //vec3 v = texture(textureIn, TexCoord).rgb;
     FragColor = vec4(v, v, v, 1.0);
 }

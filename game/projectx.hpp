@@ -49,6 +49,7 @@ struct GameState{
     Shader test;
     Shader divShader;
     Shader pShader;
+    Shader addSource;
     bool pingPong = false;
     bool pingPongPressure = false;
     void* imageVx;

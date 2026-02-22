@@ -326,6 +326,7 @@ void destroyRenderTexture(RenderTexture* renderTexture){
     }
 }
 
+#ifndef __EMSCRIPTEN__
 void getImageFromTexture(void* image, Texture* texture, uint16_t format){
     GLenum internalFormat, pixelFormat, texType;
     toGLFormat(format, &internalFormat, &pixelFormat, &texType);
@@ -339,6 +340,7 @@ void setImageToTexture(void* image, Texture* texture, uint16_t format){
     glBindTexture(GL_TEXTURE_2D, texture->id);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->width, texture->height, pixelFormat, texType, image);
 }
+#endif
 
 //------------------------ Deprecated --------------------------- 
 

@@ -339,6 +339,7 @@ GAME_API void gameStart(Arena* arena){
     gs->divShader = loadShader(gs->arena, "shaders/div-shader.vs", "shaders/div-shader.fs");
     gs->pShader = loadShader(gs->arena, "shaders/pressure-shader.vs", "shaders/pressure-shader.fs");
     gs->test = loadShader(gs->arena, "shaders/display-shader.vs", "shaders/display-shader.fs");
+    gs->addSource = loadShader(gs->arena, "shaders/add-source-shader.vs", "shaders/add-source-shader.fs");
     gs->divTexture = loadRenderTexture(SIM_W, SIM_H, TEXTURE_R32F);
     gs->pTexture = loadRenderTexture(SIM_W, SIM_H, TEXTURE_R32F);
     gs->pTexturePrev = loadRenderTexture(SIM_W, SIM_H, TEXTURE_R32F);
@@ -349,8 +350,8 @@ GAME_API void gameStart(Arena* arena){
     setTextureFilter(&gs->pTexturePrev.texture, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
     setTextureWrap(&gs->pTexturePrev.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
 
-    gs->densTexture = loadRenderTexture(SIM_W, SIM_H, TEXTURE_R32F);
-    gs->densTexturePrev = loadRenderTexture(SIM_W, SIM_H, TEXTURE_R32F);
+    gs->densTexture = loadRenderTexture(SIM_W, SIM_H, TEXTURE_RGBA32F);
+    gs->densTexturePrev = loadRenderTexture(SIM_W, SIM_H,TEXTURE_RGBA32F);
     setTextureFilter(&gs->densTexture.texture, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
     setTextureWrap(&gs->densTexture.texture, TEXTURE_WRAP_CLAMP_TO_EDGE, TEXTURE_WRAP_CLAMP_TO_EDGE);
     setTextureFilter(&gs->densTexturePrev.texture, TEXTURE_FILTER_NEAREST, TEXTURE_FILTER_NEAREST);
@@ -388,7 +389,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     //        }
     //    }
     //}
-    LOGINFO("FPS: %f", getFPS());
+    //LOGINFO("FPS: %f", getFPS());
 
     float xo = -(GRID_SIZE)*CELL_SIZE*0.5f;
     float yo = -(GRID_SIZE)*CELL_SIZE*0.5f;
@@ -398,7 +399,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
         glm::vec2 delta = (mouseWorld - gs->mousePrev) / (float)CELL_SIZE;
         float strength = 10.0f;
-        int radius = 10;
+        int radius = 5;
         for(int dj=-radius;dj<=radius;dj++){
             for(int di=-radius;di<=radius;di++){
                 int ci = mi+di, cj = mj+dj;
@@ -460,6 +461,8 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     endMode2D();
     endScene();
 
+    #if 1
+
     Rect sourceRect = {.pos = {0,0}, .size{ gs->vx.texture.width, gs->vx.texture.height}};
     RenderTexture* srcVx = gs->pingPong ? &gs->vx : &gs->vxPrev;
     RenderTexture* dstVx = gs->pingPong ? &gs->vxPrev : &gs->vx;
@@ -473,6 +476,45 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     RenderTexture* dstDens = gs->pingPongDens ? &gs->densTexturePrev : &gs->densTexture;
 
     if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        #if 0
+        float quadLeft = getScreenSize().x / 2.0f - SIM_W / 2.0f;
+        float quadBottom = getScreenSize().y / 2.0f + SIM_H / 2.0f;
+        float mouseY = getScreenSize().y - mouseScreen.y;
+        float texX = mouseScreen.x - quadLeft;
+        float texY = quadBottom - mouseY;
+        beginTextureMode(srcDens, false);
+            beginShaderMode(&gs->addSource);
+                setUniform(&gs->addSource, "mousePos", mouseScreen);
+                setUniform(&gs->addSource, "mousePosPrev", gs->mousePrevScreen);
+                setUniform(&gs->addSource, "textureSize", glm::vec2(SIM_W, SIM_H));
+                setUniform(&gs->addSource, "screenSize", getScreenSize());
+                setUniform(&gs->addSource, "mode", 0);
+                renderDrawFilledRect({texX,texY},{(float)10, (float)10},0,{1,1,1,1});
+            endShaderMode();
+        endTextureMode();
+
+        beginTextureMode(srcVx, false);
+            beginShaderMode(&gs->addSource);
+                setUniform(&gs->addSource, "mousePos", mouseScreen);
+                setUniform(&gs->addSource, "mousePosPrev", gs->mousePrevScreen);
+                setUniform(&gs->addSource, "textureSize", glm::vec2(SIM_W+1, SIM_H));
+                setUniform(&gs->addSource, "mode", 1);
+                setUniform(&gs->addSource, "screenSize", getScreenSize());
+                renderDrawFilledRect({texX,texY},{(float)10, (float)10},0,{1,1,1,1});
+            endShaderMode();
+        endTextureMode();
+        
+        beginTextureMode(srcVy, false);
+            beginShaderMode(&gs->addSource);
+                setUniform(&gs->addSource, "mousePos", mouseScreen);
+                setUniform(&gs->addSource, "mousePosPrev", gs->mousePrevScreen);
+                setUniform(&gs->addSource, "textureSize", glm::vec2(SIM_W, SIM_H+1));
+                setUniform(&gs->addSource, "mode", 2);
+                setUniform(&gs->addSource, "screenSize", getScreenSize());
+                renderDrawFilledRect({mouseScreen.x,mouseScreen.y},{(float)10, (float)10},0,{1,1,1,1});
+            endShaderMode();
+        endTextureMode();
+        #else
         float* vxData = (float*)gs->imageVx;
         float* vyData = (float*)gs->imageVy;
         float* densData = (float*)gs->imageDens;
@@ -486,7 +528,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         float texY = quadBottom - mouseY;
         float deltax = mouseScreen.x - gs->mousePrevScreen.x;
         float deltay = mouseScreen.y - gs->mousePrevScreen.y;
-        float force = 0.5f;
+        float force = 0.2f;
         int radius = 10;
         int velRadius = 10;
 
@@ -535,6 +577,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         setImageToTexture(vxData, &srcVx->texture, TEXTURE_R32F);
         setImageToTexture(vyData, &srcVy->texture, TEXTURE_R32F);
         setImageToTexture(densData, &srcDens->texture, TEXTURE_R32F);
+        #endif
     }
     gs->mousePrevScreen = mouseScreen;
     
@@ -587,7 +630,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     endTextureMode();
 
     RenderTexture* pFinal = NULL;
-    for(int i = 0; i < 50; i++){
+    for(int i = 0; i < 10; i++){
         RenderTexture* psrc = (gs->pingPongPressure) ? &gs->pTexturePrev : &gs->pTexture;
         RenderTexture* pdst = (gs->pingPongPressure) ? &gs->pTexture     : &gs->pTexturePrev;
 
@@ -661,6 +704,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         );
         endShaderMode();
     endScene();
+    #endif
 }
 
 GAME_API void gameRender(Arena*,float){}

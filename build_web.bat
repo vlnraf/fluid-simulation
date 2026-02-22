@@ -7,7 +7,7 @@ emcc -std=c++14 -O2 ^
   -s TOTAL_MEMORY=256MB ^
   -DPLATFORM_WEB ^
   --preload-file assets ^
-  --preload-file shaders ^
+  --preload-file shaders/web^
   --preload-file map ^
   -IExis/src ^
   -IExis/external ^

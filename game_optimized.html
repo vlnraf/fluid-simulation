@@ -20,15 +20,9 @@
         }
 
         #canvas {
-            /* Use fixed size to prevent layout thrashing */
-            width: 1280px;
-            height: 720px;
             display: block;
             margin: 0 auto;
             background-color: #000;
-            /* GPU acceleration */
-            transform: translateZ(0);
-            will-change: transform;
             /* Prevent right-click menu */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -47,11 +41,6 @@
     <script>
         var Module = {
             canvas: document.getElementById('canvas'),
-
-            // Prevent canvas resizing which triggers layout
-            setCanvasSize: function(width, height) {
-                // Don't resize dynamically
-            },
 
             print: function(text) {
                 console.log(text);
@@ -84,6 +73,6 @@
         });
     </script>
 
-    <script async src="game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
