@@ -11,6 +11,72 @@
 #define SIM_W 1280
 #define SIM_H 720
 
+bool aabb(glm::vec2 mousePos, glm::vec2 widgetPos, glm::vec2 widgetSize){
+    return (mousePos.x >= widgetPos.x && mousePos.x <= widgetPos.x + widgetSize.x &&
+            mousePos.y >= widgetPos.y && mousePos.y <= widgetPos.y + widgetSize.y);
+}
+
+void drawCheckBox(glm::vec2 pos, glm::vec2 size){
+    renderDrawFilledRect(pos, size, 0, {0.3,0.3,0.3,1});
+}
+
+void drawSlider(Arena* a, float value, glm::vec2 pos){
+    Font* f = getFont("Roboto-Regular");
+    String8 text = pushString8F(a, "%.1f", value);
+    float tWidth = calculateTextWidth(f, text.str, 1);
+    float tHeight = calculateTextHeight(f, text.str, 1);
+
+    glm::vec2 size = {tWidth * 2, tHeight};
+    glm::vec2 sSize = {size.x * 0.1f , tHeight};
+    glm::vec2 sPos = {pos.x + size.x * 0.5f - sSize.x * 0.5f, pos.y };
+
+    glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
+
+    glm::vec2 mousePos = getMousePos();
+    glm::vec4 color = {0.3,0.3,0.3,1};
+    if(aabb(mousePos, pos, size)){
+        color = {1, 0, 1, 1};
+    }
+
+    renderDrawText2D(f, text.str, textPos, 1);
+    renderDrawFilledRect(pos, size, 0, color);
+    renderDrawFilledRect(sPos, sSize, 0, {1.0,1.0,1.0,0.5});
+}
+
+void drawHud(Arena* a){
+    TempArena tmp = getTempArena(a);
+    Font* f = getFont("Roboto-Regular");
+    glm::vec2 screenSize = getScreenSize();
+
+    glm::vec2 panelPos = {screenSize.x - 300, 50};
+    glm::vec2 panelSize = {250,900};
+    float padding = 10;
+    int columns = 5;
+    glm::vec2 buttonSize = {(panelSize.x - padding * 2), (panelSize.y - padding * (columns + 1)) / (columns)};
+    beginScene(NO_DEPTH);
+        //Right Panel
+        renderDrawFilledRect(panelPos, panelSize, 0, {0.3,0.3,0.3,1});
+        //column division
+        glm::vec2 prevPos = {panelPos.x + padding , panelPos.y + panelSize.y - buttonSize.y - padding};
+        for(int i = 0; i < columns; i++){
+            glm::vec2 newPos = {prevPos.x, prevPos.y};
+            renderDrawFilledRect(newPos, buttonSize, 0, {1.0,0.0,0.0,1});
+            String8 text = pushString8F(tmp.arena, "Ciao %d", i);
+            float tWidth = calculateTextWidth(f, text.str, 1);
+            float tHeight = calculateTextHeight(f, text.str, 1);
+            glm::vec2 textPos = (newPos + buttonSize * 0.5f);
+            textPos.x -= tWidth * 0.5f;
+            textPos.y -= (tHeight * 0.5f);
+            renderDrawText2D(f, text.str, textPos, 1);
+            prevPos = {newPos.x, newPos.y - buttonSize.y - padding};
+        }
+
+        drawSlider(tmp.arena, 10, {50,100});
+        drawCheckBox({100, 200}, {50,50});
+    endScene();
+    releaseTempArena(tmp);
+}
+
 GAME_API void gameStart(Arena* arena){
     GameState* gs = arenaAllocStruct(arena, GameState);
     gs->arena = arena;
@@ -166,12 +232,14 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     RenderTexture* dstDens = gs->pingPongDens ? &gs->densTexturePrev : &gs->densTexture;
 
     if(isMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-        #if 0
+        #if 1
         float quadLeft = getScreenSize().x / 2.0f - SIM_W / 2.0f;
         float quadBottom = getScreenSize().y / 2.0f + SIM_H / 2.0f;
         float mouseY = getScreenSize().y - mouseScreen.y;
         float texX = mouseScreen.x - quadLeft;
         float texY = quadBottom - mouseY;
+        float deltax = mouseScreen.x - gs->mousePrevScreen.x;
+        float deltay = mouseScreen.y - gs->mousePrevScreen.y;
         beginTextureMode(srcDens, false);
             beginShaderMode(&gs->addSource);
                 setUniform(&gs->addSource, "mousePos", mouseScreen);
@@ -201,7 +269,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
                 setUniform(&gs->addSource, "textureSize", glm::vec2(SIM_W, SIM_H+1));
                 setUniform(&gs->addSource, "mode", 2);
                 setUniform(&gs->addSource, "screenSize", getScreenSize());
-                renderDrawFilledRect({mouseScreen.x,mouseScreen.y},{(float)10, (float)10},0,{1,1,1,1});
+                renderDrawFilledRect({texX,texY},{(float)10, (float)10},0,{1,1,1,1});
             endShaderMode();
         endTextureMode();
         #else
@@ -394,6 +462,9 @@ GAME_API void gameUpdate(Arena* arena,float dt){
         );
         endShaderMode();
     endScene();
+
+
+    drawHud(gs->arena);
     #endif
 }
 

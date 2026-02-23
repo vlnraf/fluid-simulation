@@ -353,10 +353,10 @@ glm::vec4 calculateSpriteUV(const Texture* texture, Rect sourceRect){
     float uOffset = epsilon / (float) texture->width;
     float vOffset = epsilon / (float) texture->height;
 
-    float tileLeft =    sourceRect.pos.x / texture->width + uOffset;
-    float tileRight =   (sourceRect.pos.x + sourceRect.size.x) / texture->width - uOffset;
-    float tileBottom =  sourceRect.pos.y / texture->height + vOffset;
-    float tileTop =     (sourceRect.pos.y + sourceRect.size.y) / texture->height - vOffset;
+    float tileLeft =    sourceRect.pos.x / texture->width;// + uOffset;
+    float tileRight =   (sourceRect.pos.x + sourceRect.size.x) / texture->width;// - uOffset;
+    float tileBottom =  sourceRect.pos.y / texture->height;// + vOffset;
+    float tileTop =     (sourceRect.pos.y + sourceRect.size.y) / texture->height;// - vOffset;
 
     return glm::vec4(tileTop, tileLeft, tileBottom, tileRight);
 }
