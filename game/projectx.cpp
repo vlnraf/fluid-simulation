@@ -11,13 +11,19 @@
 #define SIM_W 1280
 #define SIM_H 720
 
+glm::vec2 mousePos;
+
 bool aabb(glm::vec2 mousePos, glm::vec2 widgetPos, glm::vec2 widgetSize){
     return (mousePos.x >= widgetPos.x && mousePos.x <= widgetPos.x + widgetSize.x &&
             mousePos.y >= widgetPos.y && mousePos.y <= widgetPos.y + widgetSize.y);
 }
 
-void drawCheckBox(glm::vec2 pos, glm::vec2 size){
+bool drawCheckBox(glm::vec2 pos, glm::vec2 size){
     renderDrawFilledRect(pos, size, 0, {0.3,0.3,0.3,1});
+    if(aabb(mousePos, pos, size)){
+        return true;
+    }
+    return false;
 }
 
 void drawSlider(Arena* a, float value, glm::vec2 pos){
@@ -32,7 +38,6 @@ void drawSlider(Arena* a, float value, glm::vec2 pos){
 
     glm::vec2 textPos = {pos.x + size.x * 0.5f - tWidth * 0.5f, pos.y};
 
-    glm::vec2 mousePos = getMousePos();
     glm::vec4 color = {0.3,0.3,0.3,1};
     if(aabb(mousePos, pos, size)){
         color = {1, 0, 1, 1};
@@ -72,7 +77,9 @@ void drawHud(Arena* a){
         }
 
         drawSlider(tmp.arena, 10, {50,100});
-        drawCheckBox({100, 200}, {50,50});
+        if(drawCheckBox({100, 200}, {50,50})){
+            LOGINFO("HI");
+        }
     endScene();
     releaseTempArena(tmp);
 }
@@ -158,6 +165,7 @@ GAME_API void gameStart(Arena* arena){
 GAME_API void gameUpdate(Arena* arena,float dt){
     GameState* gs=(GameState*)arena->memory;
     dt = 0.1f;
+    mousePos = getMousePos();
 
     // mouse interaction
     glm::vec2 mouseScreen = getMousePos();
@@ -388,7 +396,7 @@ GAME_API void gameUpdate(Arena* arena,float dt){
     endTextureMode();
 
     RenderTexture* pFinal = NULL;
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 100; i++){
         RenderTexture* psrc = (gs->pingPongPressure) ? &gs->pTexturePrev : &gs->pTexture;
         RenderTexture* pdst = (gs->pingPongPressure) ? &gs->pTexture     : &gs->pTexturePrev;
 
