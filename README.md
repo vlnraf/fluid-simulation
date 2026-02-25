@@ -34,7 +34,7 @@ make
 ```bash
 build_web.bat
 ```
-Then open `game_optimized.html` in a browser.
+Then open `game.html` in a browser.
 
 ## Dependencies
 
