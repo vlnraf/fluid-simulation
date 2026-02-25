@@ -37,7 +37,7 @@ build_web.bat
 ```
 Then open `game.html` in a browser.
 Or just go to
-(https://vlnraf.itch.io/fluid-simulator)[Demo]
+[Demo](https://vlnraf.itch.io/fluid-simulator)
 
 ## Dependencies
 
