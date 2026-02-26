@@ -18,6 +18,11 @@
 #include "core.hpp"
 #include "fluidsimulator.hpp"
 
+enum SimType{
+    SIM_DENSITY = 1,
+    SIM_PRESSURE
+};
+
 struct GameState{
     Arena* arena;
     OrtographicCamera mainCamera;
@@ -66,7 +71,17 @@ struct GameState{
 
     bool restart;
 
+    bool dye;
+    bool vel;
+    float radius;
+    int iterations;
+    bool cpu;
+
+    SimType s;
+
     bool pause = false;
+    bool windTunnel = false;
+    bool windTunnelPrev = false;
 };
 
 extern "C" {

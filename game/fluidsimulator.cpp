@@ -310,22 +310,22 @@ void drawVelocities(FluidSimulator* fs){
 }
 
 void drawDivergence(FluidSimulator* fs){
-    Font* f = getFont("Roboto-Regular");
+    //Font* f = getFont("Roboto-Regular");
     TempArena tmp = getTempArena(fs->a);
-    float scale = ((float)fs->cellSize - (fs->cellSize / 2 + 1)) / (float)f->characterSize;
+    //float scale = ((float)fs->cellSize - (fs->cellSize / 2 + 1)) / (float)f->characterSize;
     float xo=-fs->gridSizeX * fs->cellSize * 0.5f;
     float yo=-fs->gridSizeY * fs->cellSize * 0.5f;
     for(int j=0;j<fs->gridSizeY;j++){
         for(int i=0;i<fs->gridSizeX;i++){
             float div = calculateDivergence(fs, i, j);
             String8 t = cStringFromString8(tmp.arena, pushString8F(tmp.arena, "%.2f", div));
-            float textWidth = calculateTextWidth(f, t.str, scale);
-            float textHeight = calculateTextHeight(f, t.str, scale);
+            //float textWidth = calculateTextWidth(f, t.str, scale);
+            //float textHeight = calculateTextHeight(f, t.str, scale);
 
-            float cx = xo + (fs->cellSize * 0.5f) + (i*fs->cellSize) - (textWidth * 0.5f);
-            float cy = yo + (fs->cellSize * 0.5f) + (j*fs->cellSize) - (textHeight * 0.5f);
+            //float cx = xo + (fs->cellSize * 0.5f) + (i*fs->cellSize) - (textWidth * 0.5f);
+            //float cy = yo + (fs->cellSize * 0.5f) + (j*fs->cellSize) - (textHeight * 0.5f);
             //renderDrawText3D(f, t.str, {cx, cy, 0}, scale);
-            renderDrawText2D(f, t.str, {cx, cy}, scale);
+            //renderDrawText2D(f, t.str, {cx, cy}, scale);
             //renderDrawLine({cx,cy},{cx+5, cy},{0,0,1,1},1);
         }
     }

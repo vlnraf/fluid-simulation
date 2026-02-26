@@ -8,21 +8,24 @@ uniform sampler2D divTexture;
 uniform sampler2D pPrev;
 uniform vec2 textureSize;
 uniform float dt;
+uniform int boundaryMode;
 
 out float FragColor;
 
 int isBoundary(ivec2 ij){
     if(ij.x == 0 || ij.x >= (textureSize.x - 1)){
-        return 1;
+        return 2;
     }
     if(ij.y == 0 || ij.y >= (textureSize.y - 1)){
         return 1;
     }
 
-    float radius = 50;
-    vec2 pos = vec2(200, textureSize.y / 2);
-    if(length(ij - pos) <= radius){
-        return 1;
+    if(boundaryMode == 1){
+        float radius = 50;
+        vec2 pos = vec2(200, textureSize.y / 2);
+        if(length(ij - pos) <= radius){
+            return 1;
+        }
     }
 
     return 0;

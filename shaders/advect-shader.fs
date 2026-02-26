@@ -12,6 +12,7 @@ uniform vec2 textureSize;      // size of the texture being advected (self)
 uniform vec2 textureSizeOther; // size of the ross-component texture (or pressure size for projection)
 uniform float dt;
 uniform int mode;
+uniform int boundaryMode; // 0 = closed box, 1 = wind tunnel (open left/right)
 
 //layout(binding = 0) uniform sampler2D sprite[16];
 //uniform sampler2D sprite[16];
@@ -20,17 +21,22 @@ uniform int mode;
 out vec4 FragColor;
 
 int isBoundary(ivec2 ij){
-    if(ij.x == 0 || ij.x >= (textureSize.x - 1)){
-        return 2;
+    bool leftRight = (ij.x == 0 || ij.x >= (textureSize.x - 1));
+    bool topBottom = (ij.y == 0 || ij.y >= (textureSize.y - 1));
+
+    if(leftRight){
+        return (boundaryMode == 1) ? 2 : 1; // wind tunnel: open; closed: wall
     }
-    if(ij.y == 0 || ij.y >= (textureSize.y - 1)){
-        return 1;
+    if(topBottom){
+        return 1; // always solid wall
     }
 
-    float radius = 50;
-    vec2 pos = vec2(200, textureSize.y / 2);
-    if(length(ij - pos) <= radius){
-        return 1;
+    if(boundaryMode == 1){
+        float radius = 50;
+        vec2 pos = vec2(200, textureSize.y / 2);
+        if(length(ij - pos) <= radius){
+            return 1;
+        }
     }
 
     return 0;
@@ -224,14 +230,11 @@ void main()
             FragColor = vec4(r, 0, 0, 1);
         }
         if (isBoundary(ij) == 1){
-            //FragColor = 0;
             FragColor = vec4(0, 0, 0, 1);
         }else if(isBoundary(ij) == 2 && ij.y == 0){
-            //FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
             float r = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
             FragColor = vec4(r, 0, 0, 1);
         }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
-            //FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
             float r = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
             FragColor = vec4(r, 0, 0, 1);
         }
@@ -256,14 +259,11 @@ void main()
             FragColor = vec4(r, 0, 0, 1);
         }
         if (isBoundary(ij) == 1){
-            //FragColor = 0;
             FragColor = vec4(0, 0, 0, 1);
         }else if(isBoundary(ij) == 2 && ij.y == 0){
-            //FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
             float r = texelFetch(textureVy, ivec2(ij.x, ij.y + 1), 0).r;
             FragColor = vec4(r, 0, 0, 1);
         }else if(isBoundary(ij) == 2 && ij.y >= textureSize.y-1){
-            //FragColor = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
             float r = texelFetch(textureVy, ivec2(ij.x, ij.y - 1), 0).r;
             FragColor = vec4(r, 0, 0, 1);
         }

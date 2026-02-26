@@ -13,6 +13,7 @@ uniform vec2 textureSize;      // size of the texture being advected (self)
 uniform vec2 textureSizeOther; // size of the ross-component texture (or pressure size for projection)
 uniform float dt;
 uniform int mode;
+uniform int boundaryMode;
 
 //layout(binding = 0) uniform sampler2D sprite[16];
 //uniform sampler2D sprite[16];
@@ -20,22 +21,24 @@ uniform int mode;
 out float FragColor;
 
 int isBoundary(ivec2 ij){
-    if(ij.x == 0 || ij.x >= int(textureSize.x) - 1){
-        return 1;
+    bool leftRight = (ij.x == 0 || ij.x >= int(textureSize.x) - 1);
+    bool topBottom = (ij.y == 0 || ij.y >= int(textureSize.y) - 1);
+
+    if(leftRight){
+        return (boundaryMode == 1) ? 2 : 1;
     }
-    if(ij.y == 0 || ij.y >= int(textureSize.y) - 1){
+    if(topBottom){
         return 1;
     }
 
-    //float radius = 50;
-    //vec2 pos = vec2(200, textureSize.y / 2);
-    //if(length(ij - pos) <= radius){
-    //    return 1;
-    //}
+    if(boundaryMode == 1){
+        float radius = 50.0;
+        vec2 pos = vec2(200.0, textureSize.y / 2.0);
+        if(length(vec2(ij) - pos) <= radius){
+            return 1;
+        }
+    }
 
-    //if((ij.x >= (pos-radius).x && ij.x <= (pos+radius).x) && (ij.y >= (pos-radius).y && ij.y <= (pos+radius).y)){
-    //    return true;
-    //}
     return 0;
 }
 

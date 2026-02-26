@@ -25,5 +25,9 @@ void main(){
         FragColor = mouseDelta.x * force;
     }else if (mode == 2){
         FragColor = mouseDelta.y * force;
+    }else if(mode == 3){
+        FragColor = 1.0;
+    }else if(mode == 4){
+        FragColor = 5.0;
     }
 }
