@@ -2,7 +2,8 @@
 
 Real-time 2D fluid simulation based on the incompressible Navier-Stokes equations, built on top of [EXIS](https://github.com/vlnraf/Engine). Runs on desktop via OpenGL and in the browser via WebGL.
 
-![demo](assets/demo.gif) <!-- replace with actual screenshot/gif -->
+https://github.com/user-attachments/assets/4ecbab66-e353-4d59-ad81-a72b497a177f
+
 
 ## Features
 
@@ -34,7 +35,9 @@ make
 ```bash
 build_web.bat
 ```
-Then open `game_optimized.html` in a browser.
+Then open `game.html` in a browser.
+Or just go to
+[Demo](https://vlnraf.itch.io/fluid-simulator)
 
 ## Dependencies
 
