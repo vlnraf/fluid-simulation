@@ -71,7 +71,8 @@ struct Renderer{
     Vertex* lineVertices;
     Vertex* circleVertices;
 
-    const Texture** textures;
+    
+    Texture textures[MAX_TEXTURES_BIND];
     uint16_t textureCount = 1;
 
     Font* defaultFont;

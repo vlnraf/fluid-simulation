@@ -1,3 +1,4 @@
+#if 0
 #include "core/tilemap.hpp"
 #include "core/tracelog.hpp"
 
@@ -228,3 +229,4 @@ void animateTiles(TileMap* map, float dt){
         }
     }
 }
+#endif

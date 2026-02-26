@@ -309,6 +309,8 @@ void initRenderer(Arena* arena, const uint32_t width, const uint32_t height){
     }
     setUniform(&renderer->shader, "sprite", samplers, MAX_TEXTURES_BIND);
 
+    renderer->textures[0] = getWhiteTexture();
+
     LOGINFO("init renderer finished");
 }
 
@@ -446,8 +448,6 @@ void renderStartBatch(){
     renderer->simpleVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES);
     renderer->circleVertices = arenaAllocArray(&renderer->frameArena, Vertex, MAX_VERTICES);
 
-    renderer->textures = arenaAllocArray(&renderer->frameArena, const Texture*, MAX_TEXTURES_BIND);
-    renderer->textures[0] = getTextureByName("default");
     renderer->textureCount = 1;
     renderer->quadVertexCount = 0;
     renderer->lineVertexCount = 0;
@@ -466,7 +466,7 @@ void executeCommandQueue(RenderCommand* commands){
         case RenderCommandType::RENDER_QUAD: {
             for(size_t i = 0; i < renderer->textureCount; i++){
                 glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, renderer->textures[i]->id);
+                glBindTexture(GL_TEXTURE_2D, renderer->textures[i].id);
             }
             commandDrawQuad(commands->vertexData, commands->vertexCount);
             break;
@@ -566,7 +566,7 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
     }
 
     for(size_t i = 1; i < renderer->textureCount; i++){
-        if(renderer->textures[i]->id == texture->id){
+        if(renderer->textures[i].id == texture->id){
             textureIndex = i;
             break;
         }
@@ -576,7 +576,7 @@ void renderDrawQuadPro(glm::vec3 position, const glm::vec2 size, const glm::vec3
             renderFlush();
             renderStartBatch();
         }
-        renderer->textures[renderer->textureCount] = texture;
+        renderer->textures[renderer->textureCount] = *texture;
         textureIndex = renderer->textureCount;
         renderer->textureCount++;
     }
@@ -709,10 +709,10 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
     }
 
     uint8_t textureIndex = 0;
-    Texture* texture = getTextureByHandle(font->textureHandle);
+    const Texture* texture = &font->texture;
 
     for(size_t i = 1; i < renderer->textureCount; i++){
-        if(renderer->textures[i]->id == texture->id){
+        if(renderer->textures[i].id == texture->id){
             textureIndex = i;
             break;
         }
@@ -723,7 +723,7 @@ void renderDrawText3D(Font* font, const char* text, glm::vec3 pos, float scale, 
             renderFlush();
             renderStartBatch();
         }
-        renderer->textures[renderer->textureCount] = texture;
+        renderer->textures[renderer->textureCount] = *texture;
         textureIndex = renderer->textureCount;
         renderer->textureCount++;
     }
@@ -947,26 +947,4 @@ glm::vec2 getScreenSize(){
 
 glm::vec2 getRenderSize(){
     return {renderer->width, renderer->height};
-}
-
-//------------------------------------------------------ Anchor Helpers ------------------------------------------------------
-
-glm::vec2 anchorTopLeft(float x, float y){
-    return {x, renderer->height - y};
-}
-
-glm::vec2 anchorTopRight(float x, float y){
-    return {renderer->width - x, renderer->height - y};
-}
-
-glm::vec2 anchorBottomLeft(float x, float y){
-    return {x, y};
-}
-
-glm::vec2 anchorBottomRight(float x, float y){
-    return {renderer->width - x, y};
-}
-
-glm::vec2 anchorCenter(float x, float y){
-    return {renderer->width / 2.0f + x, renderer->height / 2.0f + y};
 }

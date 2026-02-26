@@ -27,9 +27,9 @@ EngineState* initEngine(uint32_t width, uint32_t height){
     initInput(&engine->arena);
     LOGINFO("Inputs successfully initialized");
 
-    initTextureManager(&engine->arena);
+    //initTextureManager(&engine->arena);
 
-    initFontManager(&engine->arena);
+    //initFontManager(&engine->arena);
 
     initRenderer(&engine->arena, width, height);
     //initRenderer(&engine->arena, engine->mainCamera.width, engine->mainCamera.height);

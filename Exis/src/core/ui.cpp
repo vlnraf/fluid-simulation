@@ -12,7 +12,7 @@ UIState* initUI(Arena* arena){
     uiState->id = 1;
     uiState->hot = 0;
     uiState->active = 0;
-    uiState->font = getFont("Minecraft");
+    //uiState->font = getFont("Minecraft");
     return uiState;
 }
 

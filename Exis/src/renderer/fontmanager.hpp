@@ -16,7 +16,7 @@ struct Character {
 
 struct Font{
     //Texture* texture;
-    TextureHandle textureHandle;
+    Texture texture;
     Character characters[MAX_GLYPHS];
     uint32_t maxHeight = 0;
     uint32_t ascender = 0;
@@ -32,8 +32,6 @@ struct FontManager{
     Font* fonts[MAX_FONTS];
 };
 
-CORE_API void initFontManager(Arena* arena);
-//CORE_API void destroyFontManager();
-CORE_API void loadFont(const char* fileName, int characterSize = 48);
-CORE_API Font* getFont(const char* fileName);
+CORE_API Font generateTextureFont(const char* filePath, int characterSize);
+CORE_API Font loadFont(const char* fileName, int characterSize=48);
 CORE_API uint32_t calculateTextWidth(Font* font, const char* text, float scale);

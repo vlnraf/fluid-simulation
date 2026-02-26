@@ -108,7 +108,7 @@ Window windowCreate(const char* name, int width, int height){
 
     //glfwSetWindowUserPointer(window, &result);
 
-    //glfwGetFramebufferSize(window, &result.width, &result.height);
+    glfwGetFramebufferSize(window, &result.width, &result.height);
 
     return result;
 }

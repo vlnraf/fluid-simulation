@@ -5,8 +5,8 @@
 #define EXIS_ENTRYPOINT
 #include "core/entrypoint.hpp"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 // Implement the createApplication() function required by the entrypoint
 ApplicationState createApplication(){

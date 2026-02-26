@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 
 #include <stdint.h>
@@ -66,3 +67,4 @@ CORE_API std::vector<int> loadTilemapFromFile(const char* filePath, TileSet tile
 
 CORE_API TileMap LoadTilesetFromTiled(const char* filename, Ecs* ecs);
 CORE_API void animateTiles(TileMap* map, float dt);
+#endif
